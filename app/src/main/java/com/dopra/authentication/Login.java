@@ -119,11 +119,11 @@ public class Login extends AppCompatActivity {
                                     Log.d(TAG, "User Name: " + auth.getCurrentUser().getDisplayName());
 
                                     //GO TO MAIN MENU ACTIVITY!
-                                    //startActivity(new Intent(Login.this, MainMenu.class));
-                                    Toast.makeText(Login.this, "Bienvenido a bordo!", Toast.LENGTH_SHORT).show();
+                                    startActivity(new Intent(Login.this, MainMenu.class));
 
                                     //Set the logged flag
                                     isLogged = true;
+
                                 } else {
 
                                     //TODO: Make a progress dialog to keep the user informed
