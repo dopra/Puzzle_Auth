@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "770785491226",
+    "firebase_url": "https://fir-puzzle.firebaseio.com",
+    "project_id": "fir-puzzle",
+    "storage_bucket": "fir-puzzle.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:770785491226:android:71c1fd11d1728fa8",
+        "android_client_info": {
+          "package_name": "com.dopra.authentication"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "770785491226-74mtf4benke6gt0at5fkg5n6son9hikp.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.dopra.authentication",
+            "certificate_hash": "c4b02e925e81c1a55cf2020b6da39d97f9506e24"
+          }
+        },
+        {
+          "client_id": "770785491226-gbha7ci1vc1h8nocae3c0667ljka68ap.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCyfy68jEFGJNC6wrG46LRTUcshuAoZ70E"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "770785491226-gbha7ci1vc1h8nocae3c0667ljka68ap.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
