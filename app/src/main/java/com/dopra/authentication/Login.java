@@ -205,6 +205,7 @@ public class Login extends AppCompatActivity {
             valid = false;
         } else if (!Pattern.matches("(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?!.*\\s).{8,}", password)) {
 
+            //TODO: This seems to be not working
             passwordField.setError("Password Incorrecto");
             valid = false;
 
@@ -356,4 +357,5 @@ public class Login extends AppCompatActivity {
             progressDialog.dismiss();
         }
     }
+
 }
