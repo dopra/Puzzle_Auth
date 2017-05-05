@@ -3,14 +3,18 @@ package com.dopra.authentication;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.Editable;
 import android.text.TextUtils;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.util.Patterns;
 import android.view.View;
+import android.widget.AutoCompleteTextView;
 import android.widget.EditText;
 import android.widget.Toast;
 
@@ -20,6 +24,7 @@ import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Login extends AppCompatActivity {
@@ -48,9 +53,35 @@ public class Login extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        //Initialize UI elements
+        // ---- Initialize Email Field
         emailField = (EditText) findViewById(R.id.email);
+
+        //This will check for a valid email when the field lose focus
+        emailField.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View v, boolean hasFocus) {
+                if (!hasFocus) {
+                    validateEmailInput();
+                }
+            }
+        });
+
+        // ---- Initialize Password Field
         passwordField = (EditText) findViewById(R.id.password);
+
+        //This will check for a valid password when the field lose focus
+        passwordField.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View v, boolean hasFocus) {
+                if (!hasFocus) {
+                    String password = passwordField.getText().toString();
+
+                    if (TextUtils.isEmpty(password)) {
+                        passwordField.setError("Requerido");
+                    }
+                }
+            }
+        });
 
         //Initialize Auth Instance
         auth = FirebaseAuth.getInstance();
@@ -194,21 +225,32 @@ public class Login extends AppCompatActivity {
         return valid;
     }
 
-    private boolean validatePasswordInput() {
+    private boolean isEmptyPassword() {
 
-        boolean valid = true;
+        boolean valid = false;
 
         String password = passwordField.getText().toString();
 
         if (TextUtils.isEmpty(password)) {
             passwordField.setError("Requerido");
-            valid = false;
-        } else if (!Pattern.matches("(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?!.*\\s).{8,}", password)) {
+            valid = true;
+        }
 
-            //TODO: This seems to be not working
-            passwordField.setError("Password Incorrecto");
-            valid = false;
+        return valid;
+    }
 
+    private boolean validatePasswordInput() {
+
+        Boolean valid = true;
+
+        String password = passwordField.getText().toString();
+
+        String pttrn = "^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?!=.*[@#$%]).{8,15}$";
+
+        Pattern pattern = Pattern.compile(pttrn);
+        Matcher matcher = pattern.matcher(password);
+        if (!matcher.matches()) {
+            valid = false;
         }
 
         return valid;
@@ -248,13 +290,6 @@ public class Login extends AppCompatActivity {
 
     private void signIn(String email, String password) {
 
-        //If email or passoword input fail, just return
-        if (!validateEmailInput() && !validatePasswordInput()) {
-            return;
-        }
-
-        Log.d(TAG, "Please, sign me in, I'm: " + email);
-
         isNotified = false;
 
         showProgressDialog();
@@ -262,10 +297,11 @@ public class Login extends AppCompatActivity {
         auth.signInWithEmailAndPassword(email, password).addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
             @Override
             public void onComplete(@NonNull Task<AuthResult> task) {
-                Log.d(TAG, "User login successful: " + task.isSuccessful());
+
+                Log.d(TAG, "Login was Successful? -> " + task.isSuccessful());
 
                 if (!task.isSuccessful()) {
-                    Toast.makeText(Login.this, "Le pifiaste en la contraseña...", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(Login.this, "Usuario o Contraseña Incorrectos", Toast.LENGTH_LONG).show();
 
                     authCase = "";
                 }
@@ -305,7 +341,47 @@ public class Login extends AppCompatActivity {
 
     public void signInAction(View view) {
 
-        signIn(emailField.getText().toString(), passwordField.getText().toString());
+    //--- Input Validation Rutine
+
+        //First check for a valid Email
+        if (!validateEmailInput()) {
+            //Return showing an error message
+            return;
+        }
+
+        //After check if password is not empty
+        else if (isEmptyPassword()) {
+            //Return showing a "Required" message
+            return;
+        }
+
+        //After if it match the pattern
+        else if (!validatePasswordInput()) {
+
+            //Simulates make a querys
+            showProgressDialog();
+
+            //Wait for 2 seconds
+            Handler handler = new Handler();
+            handler.postDelayed(new Runnable() {
+                public void run() {
+
+                    hideProgressDialog();
+
+                    //Shows the "Wrong email or password" message
+                    Toast.makeText(Login.this, "Usuario o Contraseña Incorrectos", Toast.LENGTH_LONG).show();
+                    return;
+                }
+            }, 2000);
+
+            return;
+        }
+
+        else {
+            //If all inputs were valid
+            signIn(emailField.getText().toString(), passwordField.getText().toString());
+        }
+
     }
 
     public void resetPassword(View view) {
