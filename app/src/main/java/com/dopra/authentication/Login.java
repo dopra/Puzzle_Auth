@@ -53,35 +53,7 @@ public class Login extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        // ---- Initialize Email Field
-        emailField = (EditText) findViewById(R.id.email);
-
-        //This will check for a valid email when the field lose focus
-        emailField.setOnFocusChangeListener(new View.OnFocusChangeListener() {
-            @Override
-            public void onFocusChange(View v, boolean hasFocus) {
-                if (!hasFocus) {
-                    validateEmailInput();
-                }
-            }
-        });
-
-        // ---- Initialize Password Field
-        passwordField = (EditText) findViewById(R.id.password);
-
-        //This will check for a valid password when the field lose focus
-        passwordField.setOnFocusChangeListener(new View.OnFocusChangeListener() {
-            @Override
-            public void onFocusChange(View v, boolean hasFocus) {
-                if (!hasFocus) {
-                    String password = passwordField.getText().toString();
-
-                    if (TextUtils.isEmpty(password)) {
-                        passwordField.setError("Requerido");
-                    }
-                }
-            }
-        });
+        init_UI();
 
         //Initialize Auth Instance
         auth = FirebaseAuth.getInstance();
@@ -259,34 +231,7 @@ public class Login extends AppCompatActivity {
 
 //----- MAIN FUNCTIONS
 
-    private void createAccount(String email, String password) {
 
-        //If email or passoword input fail, just return
-        if (!validateEmailInput() && !validatePasswordInput()) {
-            return;
-        }
-
-        Log.d(TAG, "Please, create an account for: " + email);
-
-        authCase = "Register";
-
-        showProgressDialog();
-
-        auth.createUserWithEmailAndPassword(email, password).addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
-            @Override
-            public void onComplete(@NonNull Task<AuthResult> task) {
-                Log.d(TAG, "User creatation successful: " + task.isSuccessful());
-
-                if (!task.isSuccessful()) {
-                    Toast.makeText(Login.this, "Ya estás registrado =)", Toast.LENGTH_SHORT).show();
-
-                    authCase = "";
-                }
-
-                hideProgressDialog();
-            }
-        });
-    }
 
     private void signIn(String email, String password) {
 
@@ -301,9 +246,16 @@ public class Login extends AppCompatActivity {
                 Log.d(TAG, "Login was Successful? -> " + task.isSuccessful());
 
                 if (!task.isSuccessful()) {
+
+                    //Clear the password field on an error
+                    passwordField.setText("");
                     Toast.makeText(Login.this, "Usuario o Contraseña Incorrectos", Toast.LENGTH_LONG).show();
 
                     authCase = "";
+                }
+
+                else {
+                    passwordField.setText("");
                 }
 
                 hideProgressDialog();
@@ -334,9 +286,45 @@ public class Login extends AppCompatActivity {
 
 //----- AUX FUNCTIONS
 
-    public void registerAction(View view) {
+    private void init_UI() {
 
-        createAccount(emailField.getText().toString(), passwordField.getText().toString());
+        // ---- Initialize Email Field
+        emailField = (EditText) findViewById(R.id.email);
+
+        //This will check for a valid email when the field lose focus
+        emailField.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View v, boolean hasFocus) {
+                if (!hasFocus) {
+                    validateEmailInput();
+                }
+            }
+        });
+
+        // ---- Initialize Password Field
+        passwordField = (EditText) findViewById(R.id.password);
+
+        //This will check for a valid password when the field lose focus
+        passwordField.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View v, boolean hasFocus) {
+                if (!hasFocus) {
+                    String password = passwordField.getText().toString();
+
+                    if (TextUtils.isEmpty(password)) {
+                        passwordField.setError("Requerido");
+                    }
+                }
+            }
+        });
+    }
+
+    private void registerAction(View view) {
+
+        //Shows Register Activity
+        startActivity(new Intent(Login.this, Register.class));
+
+        //createAccount(emailField.getText().toString(), passwordField.getText().toString());
     }
 
     public void signInAction(View view) {
@@ -368,9 +356,13 @@ public class Login extends AppCompatActivity {
 
                     hideProgressDialog();
 
+                    //Clear the password field on an error
+                    passwordField.setText("");
+
                     //Shows the "Wrong email or password" message
                     Toast.makeText(Login.this, "Usuario o Contraseña Incorrectos", Toast.LENGTH_LONG).show();
                     return;
+
                 }
             }, 2000);
 
