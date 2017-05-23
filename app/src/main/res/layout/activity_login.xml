@@ -52,7 +52,7 @@
         android:layout_marginLeft="8dp"
         android:layout_marginRight="8dp"
         android:background="@android:color/holo_blue_light"
-        android:onClick="registerAction"
+        android:onClick="goToRegister"
         android:paddingLeft="10dp"
         android:paddingRight="10dp"
         android:text="Don't have an account?"

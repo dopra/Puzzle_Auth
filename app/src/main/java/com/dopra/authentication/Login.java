@@ -231,8 +231,6 @@ public class Login extends AppCompatActivity {
 
 //----- MAIN FUNCTIONS
 
-
-
     private void signIn(String email, String password) {
 
         isNotified = false;
@@ -319,7 +317,7 @@ public class Login extends AppCompatActivity {
         });
     }
 
-    private void registerAction(View view) {
+    public void goToRegister(View view) {
 
         //Shows Register Activity
         startActivity(new Intent(Login.this, Register.class));
