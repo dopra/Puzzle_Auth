@@ -1,10 +1,12 @@
 package com.dopra.authentication;
 
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Handler;
 import android.support.annotation.NonNull;
+import android.support.design.widget.Snackbar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -14,6 +16,7 @@ import android.text.TextWatcher;
 import android.util.Log;
 import android.util.Patterns;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.AutoCompleteTextView;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -29,6 +32,10 @@ import java.util.regex.Pattern;
 
 public class Login extends AppCompatActivity {
 
+    //TODO: Hide keyboard when Sign In button is pressed
+
+    //TODO: Commit the changes 07/06/2017 0:54am
+
     //Declare a TAG for Log Messages
     private static final String TAG = "LoginActivity";
 
@@ -37,7 +44,6 @@ public class Login extends AppCompatActivity {
     private EditText passwordField;
 
     //Declare and Initialize Flags of AuthListener
-    private String authCase = "";
     private Boolean isLogged = false;
     private Boolean isNotified = false;
     private Boolean isRegistered;
@@ -65,87 +71,38 @@ public class Login extends AppCompatActivity {
 
                 FirebaseUser user = firebaseAuth.getCurrentUser();
 
-                switch (authCase) {
+                //User already REGISTERED
+                isRegistered = true;
 
-                    //First Time User
-                    case "Register":
+                //Is the user NOT Logged?
+                if (!isLogged) {
 
-                        //This flag will be used later
-                        isRegistered = false;
+                    //Is different than null?
+                    if (user != null) {
 
-                        //Is the user NOT logged?
-                        if (!isLogged) {
+                        //The account was verified?
+                        if (user.isEmailVerified()) {
 
-                            //Is user different than null?
-                            if (user != null) {
+                            Log.d(TAG, "User Name: " + auth.getCurrentUser().getDisplayName());
 
-                                //The account was verified?
-                                if (user.isEmailVerified()) {
+                            //GO TO MAIN MENU ACTIVITY!
+                            startActivity(new Intent(Login.this, MainMenu.class));
 
-                                    //GO TO MAIN MENU ACTIVITY!
-                                    //startActivity(new Intent(Login.this, Registry.class));
-                                    Toast.makeText(Login.this, "Bienvenido a bordo! Sólo unos datos más...", Toast.LENGTH_SHORT).show();
-
-                                } else {
-
-                                    //If the user is not verified, send him a verification email
-                                    user.sendEmailVerification();
-
-                                    //Show a message notifying about the email
-                                    showVerifyDialog(isNotified);
-
-                                    //Set notified flag as TRUE
-                                    isNotified = true;
-                                }
-                            }
+                            //Set the logged flag
+                            isLogged = true;
                         }
 
-                        //Reset the authCase
-                        authCase = "";
-                        break;
+                        else {
 
+                            //Was NOT the user notified about the verification email?
+                            if (!isNotified) {
 
-                    default:
+                                //Show the message
+                                showVerifyDialog(isRegistered);
 
-                        //User already REGISTERED
-                        isRegistered = true;
-
-                        //Is the user NOT Logged?
-                        if (!isLogged) {
-
-                            //Is different than null?
-                            if (user != null) {
-
-                                //The account was verified?
-                                if (user.isEmailVerified()) {
-
-                                    Log.d(TAG, "User Name: " + auth.getCurrentUser().getDisplayName());
-
-                                    //GO TO MAIN MENU ACTIVITY!
-                                    startActivity(new Intent(Login.this, MainMenu.class));
-
-                                    //Set the logged flag
-                                    isLogged = true;
-
-                                } else {
-
-                                    //TODO: Make a progress dialog to keep the user informed
-
-                                    //Was NOT the user notified about the verification email?
-                                    if (!isNotified) {
-
-                                        //Show the message
-                                        showVerifyDialog(isRegistered);
-
-                                        //Set the notified flag as TRUE
-                                        isNotified = true;
-                                    }
-                                }
                             }
                         }
-
-                        authCase = "";
-                        break;
+                    }
                 }
             }
         };
@@ -247,9 +204,10 @@ public class Login extends AppCompatActivity {
 
                     //Clear the password field on an error
                     passwordField.setText("");
-                    Toast.makeText(Login.this, "Usuario o Contraseña Incorrectos", Toast.LENGTH_LONG).show();
 
-                    authCase = "";
+                    //Shows a message to the user
+                    Snackbar snackbar = Snackbar.make(findViewById(R.id.coordinatorLayout), "User or password wrong...", Snackbar.LENGTH_SHORT);
+                    snackbar.show();
                 }
 
                 else {
@@ -263,20 +221,28 @@ public class Login extends AppCompatActivity {
 
     private void resetPassword(String email) {
 
+        showProgressDialog();
+
         if (!validateEmailInput()) {
+
+            hideProgressDialog();
             return;
         }
 
-        Log.d(TAG, "Please reset my password, I'm: " + email);
 
-        //showProgressDialog();
+        Log.d(TAG, "Please reset my password, I'm: " + email);
 
         auth.sendPasswordResetEmail(email).addOnCompleteListener(new OnCompleteListener<Void>() {
             @Override
             public void onComplete(@NonNull Task<Void> task) {
                 if (task.isSuccessful()) {
-                    Toast.makeText(Login.this, "Te enviamos un correo para restablecer tu password", Toast.LENGTH_SHORT).show();
+
+                    //Shows a message to the user
+                    Snackbar snackbar = Snackbar.make(findViewById(R.id.coordinatorLayout), "Enviamos un correo a tu cuenta para restablecer la contraseña", Snackbar.LENGTH_LONG);
+                    snackbar.show();
                 }
+
+                hideProgressDialog();
             }
         });
     }
@@ -327,6 +293,11 @@ public class Login extends AppCompatActivity {
 
     public void signInAction(View view) {
 
+        //Hides the keyboard when Sign In button is pressed
+        InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+
+
     //--- Input Validation Rutine
 
         //First check for a valid Email
@@ -357,8 +328,10 @@ public class Login extends AppCompatActivity {
                     //Clear the password field on an error
                     passwordField.setText("");
 
-                    //Shows the "Wrong email or password" message
-                    Toast.makeText(Login.this, "Usuario o Contraseña Incorrectos", Toast.LENGTH_LONG).show();
+                    //Shows a message to the user
+                    Snackbar snackbar = Snackbar.make(findViewById(R.id.coordinatorLayout), "User or password wrong...", Snackbar.LENGTH_SHORT);
+                    snackbar.show();
+
                     return;
 
                 }
@@ -390,6 +363,8 @@ public class Login extends AppCompatActivity {
         builder.setNegativeButton("Ok", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
+
+                isNotified = true;
                 dialog.dismiss();
             }
         });
@@ -399,6 +374,7 @@ public class Login extends AppCompatActivity {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
                     auth.getCurrentUser().sendEmailVerification();
+                    isNotified = true;
                     dialog.dismiss();
                 }
             });

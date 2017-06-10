@@ -27,11 +27,14 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.auth.UserProfileChangeRequest;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Register extends AppCompatActivity {
+
+    //TODO: El correo para verificar la cuenta no se manda a la primera, hay que reenviarlo
 
     //Declare a TAG for Log Messages
     private static final String TAG = "RegisterActivity";
@@ -48,10 +51,8 @@ public class Register extends AppCompatActivity {
     FirebaseAuth.AuthStateListener authStateListener;
 
     //Declare and Initialize Flags of AuthListener
-    private String authCase = "";
     private Boolean isLogged = false;
     private Boolean isNotified = false;
-    private Boolean isRegistered;
 
     public ProgressDialog progressDialog;
 
@@ -72,9 +73,6 @@ public class Register extends AppCompatActivity {
 
                 FirebaseUser user = firebaseAuth.getCurrentUser();
 
-                //This flag will be used later
-                isRegistered = false;
-
                 //Is the user NOT logged?
                 if (!isLogged) {
 
@@ -86,7 +84,7 @@ public class Register extends AppCompatActivity {
 
                             //GO TO MAIN MENU ACTIVITY!
                             startActivity(new Intent(Register.this, Login.class));
-                            Toast.makeText(Register.this, "You are already registered, please Sign In!", Toast.LENGTH_LONG).show();
+                            Toast.makeText(Register.this, "Already registered, please go back to Login screen", Toast.LENGTH_LONG).show();
 
                         } else {
 
@@ -101,27 +99,15 @@ public class Register extends AppCompatActivity {
                         }
                     }
                 }
-
-                //Reset the authCase
-                authCase = "";
             }
         };
 
 
     }
 
-
     private void createAccount(String email, String password) {
 
-        //TODO: Check passwords are the same and no errors in any fields
-        //If email or passoword input fail, just return
-        //if (!validateEmailInput() && !validatePasswordInput(password)) {
-        //    return;
-        //}
-
         Log.d(TAG, "Please, create an account for: " + email);
-
-        authCase = "Register";
 
         showProgressDialog();
 
@@ -132,13 +118,49 @@ public class Register extends AppCompatActivity {
 
                 if (!task.isSuccessful()) {
 
-                    Snackbar snackbar = Snackbar.make(findViewById(R.id.coordinatorLayout), "Ya estás registrado =)", Snackbar.LENGTH_LONG);
+                    //Hide the dialog
+                    hideProgressDialog();
+
+                    //Shows a message to the user
+                    Snackbar snackbar = Snackbar.make(findViewById(R.id.coordinatorLayout), "Already registered, please go back to Login screen", Snackbar.LENGTH_LONG);
                     snackbar.show();
 
-                    authCase = "";
+                    auth.signOut();
                 }
 
-                hideProgressDialog();
+                else {
+
+                    //TODO: La actualización de perfil funcionó una sola vez. Hay que ver que pasa porque ni debuggeando lo pude ver...
+                    FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+
+                    UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
+                            .setDisplayName(reg_fullName.getText().toString())
+                            .setPhotoUri(Uri.parse("https://example.com/jane-q-user/profile.jpg"))
+                            .build();
+
+                    user.updateProfile(profileUpdates)
+                            .addOnCompleteListener(new OnCompleteListener<Void>() {
+                                @Override
+                                public void onComplete(@NonNull Task<Void> task) {
+                                    if (task.isSuccessful()) {
+                                        Log.d(TAG, "User profile updated.");
+                                    }
+                                }
+                            });
+
+                    auth.getCurrentUser().sendEmailVerification();
+
+                    //Necessary?? I put this in order to avoid some errors
+                    auth.signOut();
+
+                    //Hide the dialog
+                    hideProgressDialog();
+
+                    //Return to Login Screen
+                    onBackPressed();
+                }
+
+
             }
         });
     }
@@ -238,8 +260,7 @@ public class Register extends AppCompatActivity {
 
     private void init_UI() {
 
-        //TODO: Comment this section
-
+        // ----- Set the full name field and the validation script
         reg_fullName = (EditText) findViewById(R.id.reg_fullname);
         reg_fullName.setOnFocusChangeListener(new View.OnFocusChangeListener() {
             @Override
@@ -250,6 +271,7 @@ public class Register extends AppCompatActivity {
             }
         });
 
+        // ----- Set the email field and the validation script
         reg_email = (EditText) findViewById(R.id.reg_email);
         reg_email.setOnFocusChangeListener(new View.OnFocusChangeListener() {
             @Override
@@ -260,6 +282,7 @@ public class Register extends AppCompatActivity {
             }
         });
 
+        // ----- Set the first password field and the validation script
         reg_psw1 = (EditText) findViewById(R.id.reg_psw1);
         reg_psw1.setOnFocusChangeListener(new View.OnFocusChangeListener() {
             @Override
@@ -271,6 +294,7 @@ public class Register extends AppCompatActivity {
             }
         });
 
+        // ----- Set the password confirmation field and the validation script
         reg_psw2 = (EditText) findViewById(R.id.reg_psw2);
         reg_psw2.setOnFocusChangeListener(new View.OnFocusChangeListener() {
             @Override
@@ -283,6 +307,7 @@ public class Register extends AppCompatActivity {
         });
 
 
+        // ----- Set the T&C field, its link and the check box validation script
         reg_checkTyC = (CheckBox)findViewById(R.id.reg_tyc);
 
         reg_tyc_link = (TextView)findViewById(R.id.reg_tyc_link);
@@ -305,7 +330,7 @@ public class Register extends AppCompatActivity {
         AlertDialog.Builder builder = new AlertDialog.Builder(Register.this);
 
         // 2. Configure the Alert Dialog
-        builder.setMessage("Enviamos un correo a tu cuenta, por favor verifica tu correo");
+        builder.setMessage("Already sent an email to your account please, check it in order to access");
 
         builder.setNegativeButton("Ok", new DialogInterface.OnClickListener() {
             @Override
@@ -361,7 +386,7 @@ public class Register extends AppCompatActivity {
         else if (!reg_psw1.getText().toString().equals(reg_psw2.getText().toString())) {
 
             //Password 2 does not match 1
-            reg_psw2.setError("No coincide con la anterior");
+            reg_psw2.setError("Doesn't match with the previous one");
             return;
         }
 
@@ -369,7 +394,7 @@ public class Register extends AppCompatActivity {
         else if (!reg_checkTyC.isChecked()){
 
             //Show snackbar message if was not checked
-            Snackbar snackbar = Snackbar.make(findViewById(R.id.coordinatorLayout), "Debes aceptar los Terminos y Condiciones para continuar.", Snackbar.LENGTH_LONG);
+            Snackbar snackbar = Snackbar.make(findViewById(R.id.coordinatorLayout), "Must read and agree Terms and Conditions in order to create an account", Snackbar.LENGTH_LONG);
             snackbar.show();
             return;
         }
@@ -380,19 +405,14 @@ public class Register extends AppCompatActivity {
             createAccount(reg_email.getText().toString(), reg_psw1.getText().toString());
 
             //TODO: Generate Account, Update Profile
-            //TODO: Dialogs, Loading Status, etc...
 
         }
-
-
-        //Shows Register Activity
-        createAccount(reg_email.getText().toString(), reg_psw1.getText().toString());
     }
 
     public void showProgressDialog() {
         if (progressDialog == null) {
             progressDialog = new ProgressDialog(this);
-            progressDialog.setMessage("Cargando...");
+            progressDialog.setMessage("Loading...");
             progressDialog.setIndeterminate(true);
         }
 
